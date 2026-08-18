@@ -2,10 +2,9 @@ use std::ffi::{CStr, CString};
 use std::os::raw::{c_char, c_int};
 use std::sync::Mutex;
 use tokio::runtime::Runtime;
-use tokio::net::TcpStream;
-use tokio::io::copy_bidirectional;
-use ngrok::prelude::*;
-use futures::StreamExt;
+use ngrok::config::ForwarderBuilder;
+use ngrok::tunnel::EndpointInfo; // <-- Trait providing .url()
+use url::Url;
 
 lazy_static::lazy_static! {
     static ref RUNTIME: Runtime = Runtime::new().unwrap();
@@ -22,6 +21,12 @@ pub extern "C" fn ngrok_start_tunnel(
     }
 
     let token_str = unsafe { CStr::from_ptr(authtoken).to_string_lossy().into_owned() };
+    
+    let forward_str = format!("http://127.0.0.1:{}", local_port);
+    let target_url = match Url::parse(&forward_str) {
+        Ok(u) => u,
+        Err(_) => return std::ptr::null_mut(),
+    };
 
     let result = RUNTIME.block_on(async move {
         let session = ngrok::Session::builder()
@@ -30,26 +35,13 @@ pub extern "C" fn ngrok_start_tunnel(
             .await
             .ok()?;
 
-        let mut tunnel = session
+        let forwarder = session
             .http_endpoint()
-            .listen()
+            .listen_and_forward(target_url)
             .await
             .ok()?;
 
-        let url = tunnel.url().to_string();
-
-        // Spawn a background task to proxy incoming tunnel connections to the local port
-        RUNTIME.spawn(async move {
-            let local_addr = format!("127.0.0.1:{}", local_port);
-            while let Some(Ok(mut inbound)) = tunnel.next().await {
-                let target = local_addr.clone();
-                tokio::spawn(async move {
-                    if let Ok(mut outbound) = TcpStream::connect(&target).await {
-                        let _ = copy_bidirectional(&mut inbound, &mut outbound).await;
-                    }
-                });
-            }
-        });
+        let url = forwarder.url().to_string();
 
         let mut handle = SESSION_HANDLE.lock().unwrap();
         *handle = Some(session);

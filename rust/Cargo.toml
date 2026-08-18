@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-ngrok = "0.9"
-tokio = { version = "1", features = ["full"] }
+ngrok = "0.19"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 lazy_static = "1.4"
-futures = "0.3"
+url = "2.5"
