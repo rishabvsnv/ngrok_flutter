@@ -1,12 +1,19 @@
+library;
+
 import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart';
 import 'ngrok_flutter_bindings_generated.dart';
 
+/// Headless controller for starting and managing Ngrok tunnels.
 class NgrokFlutter {
+  NgrokFlutter._();
+
   static final DynamicLibrary _dylib = () {
-    if (Platform.isWindows) {
+    if (Platform.isAndroid || Platform.isLinux) {
+      return DynamicLibrary.open('libngrok_bridge.so');
+    } else if (Platform.isWindows) {
       try {
         return DynamicLibrary.open('ngrok_bridge.dll');
       } catch (_) {
@@ -16,15 +23,14 @@ class NgrokFlutter {
       }
     } else if (Platform.isMacOS || Platform.isIOS) {
       return DynamicLibrary.process();
-    } else {
-      return DynamicLibrary.open('libngrok_bridge.so');
     }
+    throw UnsupportedError('Unsupported platform: ${Platform.operatingSystem}');
   }();
 
   static final NgrokFlutterBindings _bindings = NgrokFlutterBindings(_dylib);
 
-  /// Synchronous low-level FFI call
-  static String _startTunnelSync(Map<String, String> params) {
+  /// Synchronous FFI bridge handler executed inside background isolate
+  static String _startTunnelWorker(Map<String, String> params) {
     final authtoken = params['authtoken']!;
     final target = params['target']!;
 
@@ -38,7 +44,7 @@ class NgrokFlutter {
 
       if (urlPtr == nullptr) {
         throw Exception(
-          'Failed to initialize Ngrok tunnel. Verify your authtoken, local server status, and internet connection.',
+          'Ngrok tunnel creation failed. Check authtoken validity, internet connection, and target port.',
         );
       }
 
@@ -51,19 +57,21 @@ class NgrokFlutter {
     }
   }
 
-  /// Starts an HTTP tunnel forwarding to [target] (e.g. `8080`, `127.0.0.1:8080`, or `192.168.1.51:8080`).
-  /// Runs on a background isolate to keep UI smooth.
+  /// Starts an HTTP tunnel forwarding to [target] (e.g. `"8080"` or `"127.0.0.1:8080"`).
+  ///
+  /// Runs on a dedicated background isolate to avoid UI thread blocking.
+  /// Returns the assigned public Ngrok URL (e.g. `https://xxxx.ngrok-free.app`).
   static Future<String> startTunnel({
     required String authtoken,
     required String target,
   }) async {
-    return compute(_startTunnelSync, {
+    return compute(_startTunnelWorker, {
       'authtoken': authtoken,
       'target': target,
     });
   }
 
-  /// Stops the active Ngrok tunnel.
+  /// Stops and tears down the active Ngrok tunnel.
   static Future<bool> stopTunnel() async {
     return compute((_) => _bindings.ngrok_stop_tunnel(), null);
   }
