@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'dart:io';
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart';
 import 'ngrok_flutter_bindings_generated.dart';
 
 class NgrokFlutter {
@@ -22,11 +23,11 @@ class NgrokFlutter {
 
   static final NgrokFlutterBindings _bindings = NgrokFlutterBindings(_dylib);
 
-  /// Starts an HTTP tunnel forwarding to [target] (e.g. `8080`, `127.0.0.1:8080`, or `192.168.1.51:8080`).
-  static Future<String> startTunnel({
-    required String authtoken,
-    required String target,
-  }) async {
+  /// Synchronous low-level FFI call
+  static String _startTunnelSync(Map<String, String> params) {
+    final authtoken = params['authtoken']!;
+    final target = params['target']!;
+
     final tokenNative = authtoken.toNativeUtf8();
     final targetNative = target.toNativeUtf8();
     try {
@@ -37,7 +38,7 @@ class NgrokFlutter {
 
       if (urlPtr == nullptr) {
         throw Exception(
-          'Failed to initialize Ngrok tunnel. Please check your authtoken, target address, and network connection.',
+          'Failed to initialize Ngrok tunnel. Verify your authtoken, local server status, and internet connection.',
         );
       }
 
@@ -48,5 +49,22 @@ class NgrokFlutter {
       malloc.free(tokenNative);
       malloc.free(targetNative);
     }
+  }
+
+  /// Starts an HTTP tunnel forwarding to [target] (e.g. `8080`, `127.0.0.1:8080`, or `192.168.1.51:8080`).
+  /// Runs on a background isolate to keep UI smooth.
+  static Future<String> startTunnel({
+    required String authtoken,
+    required String target,
+  }) async {
+    return compute(_startTunnelSync, {
+      'authtoken': authtoken,
+      'target': target,
+    });
+  }
+
+  /// Stops the active Ngrok tunnel.
+  static Future<bool> stopTunnel() async {
+    return compute((_) => _bindings.ngrok_stop_tunnel(), null);
   }
 }

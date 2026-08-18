@@ -1,7 +1,12 @@
 #ifndef NGROK_FLUTTER_H_
 #define NGROK_FLUTTER_H_
 
-#if defined(_WIN32)
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+#if _WIN32
 #define FFI_PLUGIN_EXPORT __declspec(dllexport)
 #else
 #define FFI_PLUGIN_EXPORT __attribute__((visibility("default")))
@@ -13,6 +18,7 @@ extern "C" {
 
 FFI_PLUGIN_EXPORT char* ngrok_start_tunnel(const char* authtoken, const char* target_addr);
 FFI_PLUGIN_EXPORT void ngrok_free_string(char* s);
+FFI_PLUGIN_EXPORT bool ngrok_stop_tunnel(void);
 
 #ifdef __cplusplus
 }

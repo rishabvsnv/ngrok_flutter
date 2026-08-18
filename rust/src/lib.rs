@@ -75,3 +75,14 @@ pub extern "C" fn ngrok_free_string(s: *mut c_char) {
         unsafe { drop(CString::from_raw(s)) };
     }
 }
+
+#[no_mangle]
+pub extern "C" fn ngrok_stop_tunnel() -> bool {
+    let mut handle = ACTIVE_FORWARDER.lock().unwrap();
+    if handle.is_some() {
+        *handle = None; // Dropping the forwarder shuts down the tunnel
+        true
+    } else {
+        false
+    }
+}
