@@ -32,10 +32,9 @@ class _NgrokTestAppState extends State<NgrokTestApp> {
     });
 
     try {
-      final port = int.tryParse(_portController.text) ?? 8080;
       final url = await NgrokFlutter.startTunnel(
         authtoken: _tokenController.text.trim(),
-        localPort: port,
+        target: _portController.text.trim(),
       );
       setState(() => _status = 'Tunnel active:\n$url');
     } catch (e) {

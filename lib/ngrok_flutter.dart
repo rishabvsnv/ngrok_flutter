@@ -22,22 +22,22 @@ class NgrokFlutter {
 
   static final NgrokFlutterBindings _bindings = NgrokFlutterBindings(_dylib);
 
-  /// Starts an HTTP tunnel forwarding to [localPort] using your Ngrok [authtoken].
-  /// Returns the public tunnel URL (e.g. `https://xxxx.ngrok-free.app`).
+  /// Starts an HTTP tunnel forwarding to [target] (e.g. `8080`, `127.0.0.1:8080`, or `192.168.1.51:8080`).
   static Future<String> startTunnel({
     required String authtoken,
-    required int localPort,
+    required String target,
   }) async {
     final tokenNative = authtoken.toNativeUtf8();
+    final targetNative = target.toNativeUtf8();
     try {
       final urlPtr = _bindings.ngrok_start_tunnel(
         tokenNative.cast<Char>(),
-        localPort,
+        targetNative.cast<Char>(),
       );
 
       if (urlPtr == nullptr) {
         throw Exception(
-          'Failed to initialize Ngrok tunnel. Please check your authtoken and network connection.',
+          'Failed to initialize Ngrok tunnel. Please check your authtoken, target address, and network connection.',
         );
       }
 
@@ -46,6 +46,7 @@ class NgrokFlutter {
       return url;
     } finally {
       malloc.free(tokenNative);
+      malloc.free(targetNative);
     }
   }
 }
