@@ -1,72 +1,103 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:ngrok_flutter/ngrok_flutter.dart' as ngrok_flutter;
+import 'package:ngrok_flutter/ngrok_flutter.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    const MaterialApp(debugShowCheckedModeBanner: false, home: NgrokTestApp()),
+  );
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+class NgrokTestApp extends StatefulWidget {
+  const NgrokTestApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<NgrokTestApp> createState() => _NgrokTestAppState();
 }
 
-class _MyAppState extends State<MyApp> {
-  late int sumResult;
-  late Future<int> sumAsyncResult;
+class _NgrokTestAppState extends State<NgrokTestApp> {
+  final _tokenController = TextEditingController();
+  final _portController = TextEditingController(text: '8080');
+  String _status = 'Idle';
+  bool _isLoading = false;
 
-  @override
-  void initState() {
-    super.initState();
-    sumResult = ngrok_flutter.sum(1, 2);
-    sumAsyncResult = ngrok_flutter.sumAsync(3, 4);
+  Future<void> _start() async {
+    if (_tokenController.text.trim().isEmpty) {
+      setState(() => _status = 'Please enter an ngrok authtoken');
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _status = 'Connecting to Ngrok...';
+    });
+
+    try {
+      final port = int.tryParse(_portController.text) ?? 8080;
+      final url = await NgrokFlutter.startTunnel(
+        authtoken: _tokenController.text.trim(),
+        localPort: port,
+      );
+      setState(() => _status = 'Tunnel active:\n$url');
+    } catch (e) {
+      setState(() => _status = 'Error: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    const textStyle = TextStyle(fontSize: 25);
-    const spacerSmall = SizedBox(height: 10);
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Native Packages'),
-        ),
-        body: SingleChildScrollView(
-          child: Container(
-            padding: const .all(10),
-            child: Column(
-              children: [
-                const Text(
-                  'This calls a native function through FFI that is shipped as source in the package. '
-                  'The native code is built as part of the Flutter Runner build.',
-                  style: textStyle,
-                  textAlign: .center,
-                ),
-                spacerSmall,
-                Text(
-                  'sum(1, 2) = $sumResult',
-                  style: textStyle,
-                  textAlign: .center,
-                ),
-                spacerSmall,
-                FutureBuilder<int>(
-                  future: sumAsyncResult,
-                  builder: (BuildContext context, AsyncSnapshot<int> value) {
-                    final displayValue =
-                        (value.hasData) ? value.data : 'loading';
-                    return Text(
-                      'await sumAsync(3, 4) = $displayValue',
-                      style: textStyle,
-                      textAlign: .center,
-                    );
-                  },
-                ),
-              ],
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ngrok Flutter Demo')),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: _tokenController,
+              decoration: const InputDecoration(
+                labelText: 'Ngrok Auth Token',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _portController,
+              decoration: const InputDecoration(
+                labelText: 'Local Port to Forward',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _start,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.all(16),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Start Ngrok Tunnel'),
+            ),
+            const SizedBox(height: 28),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: SelectableText(
+                _status,
+                style: const TextStyle(fontSize: 15, fontFamily: 'monospace'),
+              ),
+            ),
+          ],
         ),
       ),
     );
