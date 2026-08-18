@@ -1,22 +1,25 @@
-# The Flutter tooling requires that developers have CMake 3.10 or later
-# installed. You should not increase this version, as doing so will cause
-# the plugin to fail to compile for some customers of the plugin.
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
+project(ngrok_flutter LANGUAGES C)
 
-project(ngrok_flutter_library VERSION 0.0.1 LANGUAGES C)
+set(RUST_RELEASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../rust/target/release")
 
+# Define our plugin library
 add_library(ngrok_flutter SHARED
-  "ngrok_flutter.c"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ngrok_flutter.c"
 )
 
-set_target_properties(ngrok_flutter PROPERTIES
-  PUBLIC_HEADER ngrok_flutter.h
-  OUTPUT_NAME "ngrok_flutter"
-)
-
-target_compile_definitions(ngrok_flutter PUBLIC DART_SHARED_LIB)
-
-if (ANDROID)
-  # Support Android 15 16k page size
-  target_link_options(ngrok_flutter PRIVATE "-Wl,-z,max-page-size=16384")
+# Link against the compiled Rust library
+if (WIN32)
+  target_link_libraries(ngrok_flutter PRIVATE "${RUST_RELEASE_DIR}/ngrok_bridge.dll.lib")
+elseif (APPLE)
+  target_link_libraries(ngrok_flutter PRIVATE "${RUST_RELEASE_DIR}/libngrok_bridge.dylib")
+else()
+  target_link_libraries(ngrok_flutter PRIVATE "${RUST_RELEASE_DIR}/libngrok_bridge.so")
 endif()
+
+target_include_directories(ngrok_flutter PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+# Export symbols
+target_compile_definitions(ngrok_flutter PRIVATE DART_SHARED_LIB)

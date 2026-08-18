@@ -1,30 +1,29 @@
+#ifndef NGROK_FLUTTER_H_
+#define NGROK_FLUTTER_H_
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #if _WIN32
-#include <windows.h>
-#else
-#include <pthread.h>
-#include <unistd.h>
-#endif
-
-#if _WIN32
 #define FFI_PLUGIN_EXPORT __declspec(dllexport)
 #else
-#define FFI_PLUGIN_EXPORT
+#define FFI_PLUGIN_EXPORT __attribute__((visibility("default")))
 #endif
 
-// A very short-lived native function.
-//
-// For very short-lived functions, it is fine to call them on the main isolate.
-// They will block the Dart execution while running the native function, so
-// only do this for native functions which are guaranteed to be short-lived.
-FFI_PLUGIN_EXPORT int sum(int a, int b);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// A longer lived native function, which occupies the thread calling it.
-//
-// Do not call these kind of native functions in the main isolate. They will
-// block Dart execution. This will cause dropped frames in Flutter applications.
-// Instead, call these native functions on a separate isolate.
-FFI_PLUGIN_EXPORT int sum_long_running(int a, int b);
+// Starts an ngrok HTTP tunnel forwarding to `local_port`.
+// Returns an allocated C-string containing the public URL (or NULL on failure).
+FFI_PLUGIN_EXPORT char* ngrok_start_tunnel(const char* authtoken, int local_port);
+
+// Frees the memory allocated for the URL string returned by `ngrok_start_tunnel`.
+FFI_PLUGIN_EXPORT void ngrok_free_string(char* s);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // NGROK_FLUTTER_H_
