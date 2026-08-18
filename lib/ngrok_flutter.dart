@@ -7,9 +7,11 @@ class NgrokFlutter {
   static final DynamicLibrary _dylib = () {
     if (Platform.isWindows) {
       try {
-        return DynamicLibrary.open('ngrok_flutter.dll');
+        return DynamicLibrary.open('ngrok_bridge.dll');
       } catch (_) {
-        return DynamicLibrary.open('rust/target/release/ngrok_bridge.dll');
+        return DynamicLibrary.open(
+          '${Directory.current.path}/../rust/target/release/ngrok_bridge.dll',
+        );
       }
     } else if (Platform.isMacOS || Platform.isIOS) {
       return DynamicLibrary.process();
