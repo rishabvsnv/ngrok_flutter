@@ -1,0 +1,12 @@
+# .pubignore
+.dart_tool/
+.git/
+.github/
+.idea/
+.vscode/
+build/
+rust/target/
+example/build/
+example/.dart_tool/
+example/pubspec.lock
+rust/Cargo.lock
