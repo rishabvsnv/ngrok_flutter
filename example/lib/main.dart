@@ -20,6 +20,13 @@ class _NgrokTestAppState extends State<NgrokTestApp> {
   String _status = 'Idle';
   bool _isLoading = false;
 
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    _portController.dispose();
+    super.dispose();
+  }
+
   Future<void> _start() async {
     if (_tokenController.text.trim().isEmpty) {
       setState(() => _status = 'Please enter an ngrok authtoken');
