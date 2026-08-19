@@ -48,3 +48,8 @@ example/linux/flutter/ephemeral/
 .DS_Store
 Thumbs.db
 *.log
+
+# Un-ignore Android jniLibs binaries
+!android/src/main/jniLibs/
+!android/src/main/jniLibs/**
+!android/src/main/jniLibs/**/*.so
