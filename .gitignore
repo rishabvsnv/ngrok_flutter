@@ -1,33 +1,50 @@
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+# Rust build artifacts
+target/
+rust/target/
+Cargo.lock
 
-# IntelliJ related
+# Flutter & Dart artifacts
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+example/build/
+example/.dart_tool/
+example/.flutter-plugins
+example/.flutter-plugins-dependencies
+example/pubspec.lock
+/pubspec.lock
+
+# Compiled native libraries / binaries
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.obj
+*.o
+*.exe
+
+# Ephemeral native build directories in example
+example/android/.gradle/
+example/android/app/build/
+example/ios/Pods/
+example/ios/.symlinks/
+example/ios/Flutter/Flutter.framework
+example/ios/Flutter/Flutter.podspec
+example/macos/Pods/
+example/macos/.symlinks/
+example/macos/Flutter/ephemeral/
+example/windows/flutter/ephemeral/
+example/linux/flutter/ephemeral/
+
+# IDE and OS files
+.idea/
+.vscode/
 *.iml
 *.ipr
 *.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-# Libraries should not include pubspec.lock, per https://dart.dev/guides/libraries/private-files#pubspeclock.
-/pubspec.lock
-**/doc/api/
-.dart_tool/
-.flutter-plugins-dependencies
-/build/
-/coverage/
+.DS_Store
+Thumbs.db
+*.log
